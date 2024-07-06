@@ -72,9 +72,6 @@
 #include <errno.h>
 #endif
 
-#ifdef HAVE_INET_NTOA_R
-#include "inet_ntoa_r.h"
-#endif
 
 #include <curl/curl.h>
 #include "urldata.h"

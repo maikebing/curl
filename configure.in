@@ -1,9 +1,10 @@
 dnl $Id$
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(lib/urldata.h)
+AC_INIT
+AC_CONFIG_SRCDIR([lib/urldata.h])
 AM_CONFIG_HEADER(config.h src/config.h)
 AM_INIT_AUTOMAKE(curl,"7.1.1")
-AM_PROG_LIBTOOL
+LT_INIT
 
 dnl
 dnl Detect the canonical host and target build environment
@@ -18,7 +19,7 @@ dnl AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
 dnl Check for AIX weirdos
-AC_AIX
+AC_USE_SYSTEM_EXTENSIONS
 
 dnl **********************************************************************
 dnl Checks for libraries.
@@ -33,10 +34,7 @@ if test "$ac_cv_lib_nsl_gethostbyname" = "$ac_cv_func_gethostbyname"; then
   AC_MSG_CHECKING([trying both nsl and socket libs])
   my_ac_save_LIBS=$LIBS
   LIBS="-lnsl -lsocket $LIBS"
-  AC_TRY_LINK( ,
-             [gethostbyname();],
-             my_ac_link_result=success,
-             my_ac_link_result=failure )
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[gethostbyname();]])],[my_ac_link_result=success],[my_ac_link_result=failure ])
 
   if test "$my_ac_link_result" = "failure"; then
     AC_MSG_RESULT([no])
@@ -179,38 +177,30 @@ dnl check for a few thread-safe functions
 
     AC_MSG_CHECKING(for gethostbyname_r)
     if test -z "$ac_cv_gethostbyname_args"; then
-        AC_TRY_COMPILE(
-            [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <netdb.h>],
-            [
+#include <netdb.h>]], [[
 struct hostent h;
 struct hostent_data hdata;
 char *name;
 int  rc;
-rc = gethostbyname_r(name, &h, &hdata);],
-            ac_cv_gethostbyname_args=3)
+rc = gethostbyname_r(name, &h, &hdata);]])],[ac_cv_gethostbyname_args=3],[])
     fi
     if test -z "$ac_cv_gethostbyname_args"; then
-        AC_TRY_COMPILE(
-            [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <netdb.h>],
-            [
+#include <netdb.h>]], [[
 struct hostent *hp;
 struct hostent h;
 char *name;
 char buffer[10];
 int  h_errno;
-hp = gethostbyname_r(name, &h, buffer, 10, &h_errno);],
-            ac_cv_gethostbyname_args=5)
+hp = gethostbyname_r(name, &h, buffer, 10, &h_errno);]])],[ac_cv_gethostbyname_args=5],[])
     fi
     if test -z "$ac_cv_gethostbyname_args"; then
-        AC_TRY_COMPILE(
-            [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <netdb.h>],
-            [
+#include <netdb.h>]], [[
 struct hostent h;
 struct hostent *hp;
 char *name;
@@ -219,8 +209,7 @@ int rc;
 int h_errno;
 
 rc = gethostbyname_r(name, &h, buf, 10, &hp, &h_errno);
-            ],
-            ac_cv_gethostbyname_args=6)
+            ]])],[ac_cv_gethostbyname_args=6],[])
     fi
     if test -z "$ac_cv_gethostbyname_args"; then
         AC_MSG_RESULT(no)
@@ -242,11 +231,9 @@ dnl If it exists, it may use one of three different interfaces
 dnl **********************************************************************
     AC_MSG_CHECKING(for gethostbyaddr_r)
     if test -z "$ac_cv_gethostbyaddr_args"; then
-        AC_TRY_COMPILE(
-            [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <netdb.h>],
-            [
+#include <netdb.h>]], [[
                 char * address;
                 int length;
                 int type;
@@ -254,16 +241,13 @@ dnl **********************************************************************
                 struct hostent_data hdata;
                 int rc;
                 rc = gethostbyaddr_r(address, length, type, &h, &hdata);
-            ],
-            ac_cv_gethostbyaddr_args=5)
+            ]])],[ac_cv_gethostbyaddr_args=5],[])
         
     fi
     if test -z "$ac_cv_gethostbyaddr_args"; then
-        AC_TRY_COMPILE(
-            [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <netdb.h>],
-            [
+#include <netdb.h>]], [[
                 char * address;
                 int length;
                 int type;
@@ -275,16 +259,13 @@ dnl **********************************************************************
 
                 hp = gethostbyaddr_r(address, length, type, &h,
                                      buffer, buflen, &h_errnop);
-            ],
-            ac_cv_gethostbyaddr_args=7)
+            ]])],[ac_cv_gethostbyaddr_args=7],[])
     fi
 
     if test -z "$ac_cv_gethostbyaddr_args"; then
-        AC_TRY_COMPILE(
-            [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
-#include <netdb.h>],
-            [
+#include <netdb.h>]], [[
                 char * address;
                 int length;
                 int type;
@@ -297,8 +278,7 @@ dnl **********************************************************************
 
                 rc = gethostbyaddr_r(address, length, type, &h,
                                      buffer, buflen, &hp, &h_errnop);
-            ],
-            ac_cv_gethostbyaddr_args=8)
+            ]])],[ac_cv_gethostbyaddr_args=8],[])
     fi
     if test -z "$ac_cv_gethostbyaddr_args"; then
         AC_MSG_RESULT(no)
@@ -324,7 +304,15 @@ dnl Back to "normal" configuring
 dnl **********************************************************************
 
 dnl Checks for header files.
-AC_HEADER_STDC
+m4_warn([obsolete],
+[The preprocessor macro `STDC_HEADERS' is obsolete.
+  Except in unusual embedded environments, you can safely include all
+  ISO C90 headers unconditionally.])dnl
+# Autoupdate added the next two lines to ensure that your configure
+# script's behavior did not change.  They are probably safe to remove.
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS( \
         unistd.h \
         malloc.h \
@@ -358,7 +346,20 @@ dnl AC_CHECK_HEADERS(zlib.h)
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
+m4_warn([obsolete],
+[Update your code to rely only on HAVE_SYS_TIME_H,
+then remove this warning and the obsolete code below it.
+All current systems provide time.h; it need not be checked for.
+Not all systems provide sys/time.h, but those that do, all allow
+you to include it and time.h simultaneously.])dnl
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+# Obsolete code to be removed.
+if test $ac_cv_header_sys_time_h = yes; then
+  AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
+	     and <time.h>.  This macro is obsolete.])
+fi
+# End of obsolete code.
+
 
 # mprintf() checks:
 
@@ -373,7 +374,19 @@ AC_DEFINE_UNQUOTED(OS, "${host}")
 
 dnl Checks for library functions.
 dnl AC_PROG_GCC_TRADITIONAL
-AC_TYPE_SIGNAL
+m4_warn([obsolete],
+[your code may safely assume C89 semantics that RETSIGTYPE is void.
+Remove this warning and the `AC_CACHE_CHECK' when you adjust the code.])dnl
+AC_CACHE_CHECK([return type of signal handlers],[ac_cv_type_signal],[AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([#include <sys/types.h>
+#include <signal.h>
+],
+		 [return *(signal (0, 0)) (0) == 1;])],
+		   [ac_cv_type_signal=int],
+		   [ac_cv_type_signal=void])])
+AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
+		    (`int' or `void').])
+
 dnl AC_FUNC_VPRINTF
 AC_CHECK_FUNCS( socket \
                 select \
@@ -418,14 +431,15 @@ dnl AC_PATH_PROG( RANLIB, ranlib, /usr/bin/ranlib,
 dnl   $PATH:/usr/bin/:/usr/local/bin )
 dnl AC_SUBST(RANLIB)
 
-AC_OUTPUT( Makefile \
+AC_CONFIG_FILES([Makefile \
            curl.spec \
            curl-ssl.spec \
 	   docs/Makefile \
 	   include/Makefile \
 	   include/curl/Makefile \
 	   src/Makefile \
-           lib/Makefile )
+           lib/Makefile ])
+AC_OUTPUT
 dnl	   perl/checklinks.pl \
 dnl	   perl/getlinks.pl \
 dnl        perl/formfind.pl \

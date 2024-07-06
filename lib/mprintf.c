@@ -1172,7 +1172,7 @@ int msprintf(char *buffer, const char *format, ...)
   return retcode;
 }
 
-extern int fputc(int, FILE *);
+
 
 int mprintf(const char *format, ...)
 {
